@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 // Print spectrum 2d array
 void print_spectrum(const char* info, float_spec (*spectrum_2d)[2], int spectrum_len) {
-    return;
+#ifdef __DEBUG__
     printf("%s", info);
     int i;
     for (i = 0; i < spectrum_len; i++) {
         printf("%d\t%f\t%f\n", i, spectrum_2d[i][0], spectrum_2d[i][1]);
     }
+#endif
 }
 
 void swap(float_spec* a, float_spec* b) {
@@ -110,20 +110,6 @@ void inline calculate_spectrum_argsort(float_spec (*spectrum_2d)[2], int spectru
     quicksort(spectrum_2d, spectrum_argsort, 0, spectrum_len - 1);
 }
 
-// void inline calculate_spectrum_argsort(float_spec (*spectrum_2d)[2], int spectrum_len, int* spectrum_argsort) {
-//     for (int i = 0; i < spectrum_len; i++) {
-//         spectrum_argsort[i] = i;
-//     }
-//     for (int i = 0; i < spectrum_len - 1; i++) {
-//         for (int j = 0; j < spectrum_len - 1 - i; j++) {
-//             int *a = &(spectrum_argsort[j]), *b = &(spectrum_argsort[j + 1]);
-//             if (spectrum_2d[*a][1] < spectrum_2d[*b][1]) {
-//                 swap_int(a, b);
-//             }
-//         }
-//     }
-// }
-
 bool inline need_centroid(float_spec (*spectrum_2d)[2], int spectrum_len, float min_ms2_difference_in_da, float min_ms2_difference_in_ppm) {
     for (int i = 0; i < spectrum_len - 1; i++) {
         if (min_ms2_difference_in_ppm > 0) {
@@ -149,25 +135,30 @@ int inline centroid_spectrum(float_spec (*spectrum_2d)[2], int spectrum_length, 
         int idx = spectrum_argsort[i];
         if (min_ms2_difference_in_ppm > 0) {
             mz_delta_allowed_left = spectrum_2d[idx][0] * min_ms2_difference_in_ppm * 1e-6;
-            mz_delta_allowed_right = spectrum_2d[idx][0] / (1 - min_ms2_difference_in_ppm * 1e-6);
+            mz_delta_allowed_right = spectrum_2d[idx][0] / (1 - min_ms2_difference_in_ppm * 1e-6) - spectrum_2d[idx][0];
+            if (__DEBUG__CLEAN_SPECTRUM__) printf("mz: %f, mz_delta_allowed_left: %f, mz_delta_allowed_right: %f\n", spectrum_2d[idx][0], mz_delta_allowed_left, mz_delta_allowed_right);
         }
+        if (__DEBUG__CLEAN_SPECTRUM__) print_spectrum("Input:\n", spectrum_2d, spectrum_length);
         if (spectrum_2d[idx][1] > 0) {
             // Find left board for current peak
             int idx_left = idx - 1;
             while (idx_left >= 0 && spectrum_2d[idx][0] - spectrum_2d[idx_left][0] <= mz_delta_allowed_left) {
                 idx_left--;
             }
+            if (__DEBUG__CLEAN_SPECTRUM__) printf("idx_left: %d\n", idx_left);
 
             // Find right board for current peak
             int idx_right = idx + 1;
             while (idx_right < spectrum_length && spectrum_2d[idx_right][0] - spectrum_2d[idx][0] <= mz_delta_allowed_right) {
                 idx_right++;
             }
+            if (__DEBUG__CLEAN_SPECTRUM__) printf("idx_right: %d\n", idx_right);
 
             // Merge the peaks in the board
             float_spec intensity_sum = 0;
             float_spec intensity_weighted_sum = 0;
             for (int i = idx_left + 1; i < idx_right; i++) {
+                if (__DEBUG__CLEAN_SPECTRUM__) printf("i: %d, mz: %f, intensity: %f\n", i, spectrum_2d[i][0], spectrum_2d[i][1]);
                 intensity_sum += spectrum_2d[i][1];
                 intensity_weighted_sum += spectrum_2d[i][1] * spectrum_2d[i][0];
                 spectrum_2d[i][1] = 0;
@@ -177,6 +168,7 @@ int inline centroid_spectrum(float_spec (*spectrum_2d)[2], int spectrum_length, 
             spectrum_2d[idx][0] = intensity_weighted_sum / intensity_sum;
             spectrum_2d[idx][1] = intensity_sum;
         }
+        if (__DEBUG__CLEAN_SPECTRUM__) print_spectrum("Input:\n", spectrum_2d, spectrum_length);
     }
     spectrum_length = sort_spectrum_by_mz_and_zero_intensity(spectrum_2d, spectrum_length);
     return spectrum_length;
@@ -202,7 +194,7 @@ int clean_spectrum(float_spec* spectrum, int spectrum_length,
     float_spec* spectrum_ptr = spectrum;
     float_spec* spectrum_end = spectrum + spectrum_length * 2;
     for (; spectrum_ptr < spectrum_end; spectrum_ptr += 2) {
-        if (*spectrum_ptr <= min_mz || (*spectrum_ptr >= max_mz && max_mz > 0)) {
+        if (*spectrum_ptr <= min_mz || (max_mz > 0 && *spectrum_ptr >= max_mz)) {
             spectrum_ptr[1] = 0;
         }
     }
@@ -224,7 +216,7 @@ int clean_spectrum(float_spec* spectrum, int spectrum_length,
             }
         }
         float_spec noise_threshold_intensity = noise_threshold * max_intensity;
-        // if (__DEBUG__CLEAN_SPECTRUM__) printf("Remove the peaks with intensity less than %f * %f = %f:\n", noise_threshold, max_intensity, noise_threshold_intensity);
+        if (__DEBUG__CLEAN_SPECTRUM__) printf("Remove the peaks with intensity less than %f * %f = %f:\n", noise_threshold, max_intensity, noise_threshold_intensity);
         for (int i = 0; i < spectrum_length; i++) {
             if (spectrum_2d[i][1] < noise_threshold_intensity) {
                 spectrum_2d[i][1] = 0;

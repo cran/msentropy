@@ -1,13 +1,13 @@
-be11bc399ccc1ffd0de94edc6ab7a18e *DESCRIPTION
+9b7341b26b0055217012f322b81ef42b *DESCRIPTION
 01cdadac795dc94707cc55a8e4644e48 *NAMESPACE
 4305cecb795355647650a920b552d88b *R/RcppExports.R
 12672b8d2e3a75e7a1c1b01df3938856 *man/calculate_entropy_similarity.Rd
 8c2e797e8423897e2096913c1c40826b *man/calculate_spectral_entropy.Rd
 7dde51ae337bee8381cfd9a5ad5d93c8 *man/calculate_unweighted_entropy_similarity.Rd
 6daa81332e4fca40ef07eb51888dfbb5 *man/clean_spectrum.Rd
-be237e2e8e40defad875c14461962035 *src/CleanSpectrum.c
-5df960a172225d57d10843a759f321ed *src/CleanSpectrum.h
+fc8bcbaafb8a9a189237064cf1da6d5a *src/CleanSpectrum.c
+90550d4508a6a3ceb8316209bed86a23 *src/CleanSpectrum.h
 2934932010e9e0d117b71cc4ac9de0ae *src/RcppExports.cpp
 6c9036099c043c9cb89fd228c0e0f0bb *src/SpectralEntropy.c
 74ab282a54da84533033064473b500cf *src/SpectralEntropy.h
-8bb3df4a6ea4b2ffdfc1313aad3a3094 *src/entropy.cpp
+a70bf15141448cb67f27956e186bd7dd *src/entropy.cpp
